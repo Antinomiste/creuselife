@@ -75,10 +75,15 @@ facteurs = {"actorCategory": 1,
             "genres": 1000
             }
 
-for genre in unique_genres:
-    facteurs[genre] = facteurs["genres"]
 
-for category, facteur in facteurs.items():
+multiplier = facteurs.copy()
+
+for genre in unique_genres:
+    multiplier[genre] = facteurs["genres"]
+
+multiplier.pop("genres")
+
+for category, facteur in multiplier.items():
     df_factorized[category] *= facteur
 
 # 2. Définition du modèle et du calcul
