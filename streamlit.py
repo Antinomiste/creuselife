@@ -51,7 +51,7 @@ if option:
         show_movie(option)
         st.write("Excellent choix !")
     with col2:
-        st.image(image_film_choice(option_tconst)[0])   
+        st.image(image_film_choice(option_tconst))   
     
     st.write("#")
 
@@ -115,7 +115,7 @@ if option:
         with colonne:
             tconst = title_to_tconst(titre)
             image = image_film_choice(tconst)
-            st.image(image[0])
+            st.image(image)
             show_movie(titre)
     
     container.write("#")
