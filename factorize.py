@@ -109,16 +109,16 @@ def image_film_choice(tconst):
     html = requests.get(url, headers={'User-Agent': navigator})
     soup = BeautifulSoup(html.text, 'html.parser')
 
-#    images = soup.find_all('img', {'src':re.compile('.jpg')})
-#    for image in images:
-#        affiche=[]
-#        affiche.append(image['src'])
-#        break
-#    return affiche
+    images = soup.find_all('img', {'src':re.compile('.jpg')})
+    for image in images:
+        affiche=[]
+        affiche.append(image['src'])
+        break
+    return affiche[0]
 
-    image = soup.find('div', {'class': "ipc-media ipc-media--poster-27x40 ipc-image-media-ratio--poster-27x40 ipc-media--baseAlt ipc-media--poster-l ipc-poster__poster-image ipc-media__img"})
-    lien = image.img['src']
-    return lien
+    #image = soup.find('div', {'class': "ipc-media ipc-media--poster-27x40 ipc-image-media-ratio--poster-27x40 ipc-media--baseAlt ipc-media--poster-l ipc-poster__poster-image ipc-media__img"})
+    #lien = image.img['src']
+    #return lien
 
 
 def title_to_tconst(full_title):
