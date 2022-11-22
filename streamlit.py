@@ -86,7 +86,7 @@ if option:
         facteurs = {"actorCategory": category_value,
                     "is_title_french":1,
                     "numVotes": 1/1000,
-                    "averageRating": 100,
+                    "averageRating": 500,
                     "startYear": year_value,
                     "genres": genre_value,
                     }
