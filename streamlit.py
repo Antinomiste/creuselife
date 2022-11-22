@@ -76,7 +76,7 @@ if option:
                       value=1,
                       step=1)
         
-        category_value = st.slider("Quel poids pour le sexe de l'acteur ?",
+        category_value = st.slider("Quel poids pour la presence d'une actrice principale ?",
                                    min_value=0,
                                    max_value=500,
                                    value=0,
