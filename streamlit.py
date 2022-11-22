@@ -31,7 +31,6 @@ st.title("Projet Creuse's Life")
 st.subheader("Une production d'Agnès, Alexis, Bruno, Caro, et Pierrot", anchor=None)
 st.header("Système de recommandation de films", anchor=None)
 
-
 # Selection du film
 
 option = st.selectbox(
@@ -41,38 +40,92 @@ option = st.selectbox(
     )
 
 if option:
-    
+      
     # Display du titre et d'infos sur le film
-    
-    option_row = df_base_show[df_base_show["show_title"] == option]
-    option_tconst = option_row["tconst"].iloc[0]
+
+    option_tconst = title_to_tconst(option)
+    st.write("#")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.write("Vous avez aimé :\n")
+        show_movie(option)
+        st.write("Excellent choix !")
+    with col2:
+        st.image(image_film_choice(option_tconst)[0])   
     
     st.write("#")
-    
-    st.write("Vous avez aimé :\n")
-    show_movie(option)
-    st.write("Excellent choix !")
-    
-    st.write("#")
-    
+
     
     # Display des recommandations
     
     st.write("\nD'autres films similaires qui pourraient vous plaire :\n\n")
     
-    voisins = plus_proches_films(option_tconst, 4, X)
-    voisins_titres = voisins["show_title"]
+    container = st.container()
     
-    for colonne, titre in zip(st.columns(3), voisins_titres[1:]):
+    metrics_expander = st.expander("Modifier les metriques", expanded=False)
+    with metrics_expander:
+        genre_value = st.slider("Quel poids pour les genres ?",
+                      min_value=0,
+                      max_value=1000,
+                      value=500,
+                      step=50)
+    
+        year_value = st.slider("Quel poids pour l'annee ?",
+                      min_value=0,
+                      max_value=20,
+                      value=1,
+                      step=1)
+        
+        category_value = st.slider("Quel poids pour le sexe de l'acteur ?",
+                                   min_value=0,
+                                   max_value=500,
+                                   value=0,
+                                   step=25,
+                                   )
+
+        facteurs = {"actorCategory": category_value,
+                    "is_title_french":1,
+                    "numVotes": 1/1000,
+                    "averageRating": 100,
+                    "startYear": year_value,
+                    "genres": genre_value,
+                    }
+    
+        multiplier = facteurs.copy()
+    
+        for genre in unique_genres:
+            multiplier[genre] = facteurs["genres"]
+    
+        multiplier.pop("genres")
+        
+        df_choice = df_factorized.copy()
+        for category, facteur in multiplier.items():
+            df_choice[category] *= facteur
+    
+        X = df_choice.drop(columns=dropables)
+        y = df_choice["tconst"]
+    
+    
+    
+        
+        voisins = plus_proches_films(df_choice, option_tconst, 4, X)
+        voisins_titres = voisins["show_title"]
+    
+    for colonne, titre in zip(container.columns(3), voisins_titres[1:]):
         with colonne:
+            tconst = title_to_tconst(titre)
+            image = image_film_choice(tconst)
+            st.image(image[0])
             show_movie(titre)
     
+    container.write("#")
     
     # A usage interne, le display de la table des résultats pour voir les détails
-    
-    if st.checkbox('Voir les détails'):
+    my_expander = st.expander("Voir les details", expanded=False)
+    with my_expander:
         st.table(voisins)
 
+    st.write("#")
 
     # Un feedback
     
@@ -92,8 +145,8 @@ if option:
         key=2)
     
     # A usage interne, le feedback précédent
-
-    if st.checkbox('Voir les évaluations précédentes'):
+    my_expander = st.expander("Voir les évaluations précédentes", expanded=False)
+    with my_expander:
         st.table(feedbacks)
                     
     # Système de commentaire et upload sur un fichier
@@ -112,4 +165,3 @@ if option:
             if submit_button:
                 feedbacks.loc[len(feedbacks.index)] = feedback             
                 feedbacks.to_csv("feedbacks.csv")
-                

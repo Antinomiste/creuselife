@@ -1,7 +1,12 @@
+# -*- coding: utf-8 -*-
+
 # I. Import des bibliotheques et dataframes
 
 from module import import_local # Fonction personnelle pour charger des DF
-from sklearn.neighbors import NearestNeighbors # L'algorithme utilisé
+from sklearn.neighbors import NearestNeighbors # L'algorithme utilisÃ©
+import requests
+from bs4 import BeautifulSoup
+import re
 
 base_adress = "df_base_frenchie.csv" 
              # Base contenant les films qui ont une distribution en France
@@ -15,8 +20,8 @@ df_base = import_local(base_adress)
 
 df_factorized = df_base.copy()
 
-# 1. Ajout de colonnes supplémentaires: chacun des genres uniques,
-#    (approximation de l') origine française.
+# 1. Ajout de colonnes supplÃ©mentaires: chacun des genres uniques,
+#    (approximation de l') origine franÃ§aise.
 
 all_genres = df_base.genres.unique()
 unique_genres = set()
@@ -36,7 +41,7 @@ df_factorized["is_title_french"] = (
     df_factorized["primaryTitle"] == df_factorized["title"]
                                 )
 
-# 2. Numérisation des colonnes non-numériques pertinentes
+# 2. NumÃ©risation des colonnes non-numÃ©riques pertinentes
 
 df_factorized["actorCategory"] = df_factorized["actorCategory"].apply(
                                         lambda x : 1 if x=='actress' else -1
@@ -48,7 +53,7 @@ df_factorized["is_title_french"] = df_factorized["is_title_french"].apply(
 
 df_factorized.to_csv("df_factorized.csv")
 
-# 3. Préparation de l'affichage des résultats
+# 3. PrÃ©paration de l'affichage des rÃ©sultats
 
 df_base_show = df_base.copy()
 df_base_show = df_base_show[df_base['numVotes'] > 475].sort_values(
@@ -65,28 +70,10 @@ df_base_show['show_title'] = df_base_show['title'].str.cat(
 # III. Mise en place de l'algorithme
 
 
-# 1. Détermination des poids
-
-facteurs = {"actorCategory": 1,
-            "is_title_french":1,
-            "numVotes": 1/1000,
-            "averageRating": 500,
-            "startYear": 1,
-            "genres": 1000
-            }
+# 1. DÃ©termination des poids
 
 
-multiplier = facteurs.copy()
-
-for genre in unique_genres:
-    multiplier[genre] = facteurs["genres"]
-
-multiplier.pop("genres")
-
-for category, facteur in multiplier.items():
-    df_factorized[category] *= facteur
-
-# 2. Définition du modèle et du calcul
+# 2. DÃ©finition du modÃ¨le et du calcul
 
 dropables = ["tconst",
              "primaryTitle",
@@ -96,68 +83,40 @@ dropables = ["tconst",
              "title",
              "firstActor"]
 
-X = df_factorized.drop(columns=dropables)
-y = df_factorized["tconst"]
 
-def plus_proches_films(tconsts, nb_neighbors, X, algorithm ='auto'):
+def plus_proches_films(df, tconst, nb_neighbors, my_X, algorithm ='auto'):
 
     modelKNN = NearestNeighbors(n_neighbors=nb_neighbors,
                                 algorithm=algorithm
-                                ).fit(X)
-    if isinstance(tconsts, str):
-        neighbors = modelKNN.kneighbors(
-            df_factorized.loc[df_factorized.tconst == tconsts].drop(
-                                                            columns=dropables
-                                                                   )
-                                       )
-        titles = df_base_show[['show_title',
-                               'directors',
-                               'firstActor',
-                               'genres',
-                               'averageRating',
-                               'numVotes',
-                               'tconst']].loc[neighbors[1][0]]
-        return titles
-    else:
-        for tconst in tconsts:
-            plus_proches_films(tconst, nb_neighbors, X, algorithm=algorithm)
-        
-        
-        
-# IV. Tests        
-       
- 
-algorithms = ['brute', 'kd_tree', 'ball_tree', 'auto']
+                                ).fit(my_X)
 
-liste_test = ['tt1853728',
-              'tt0172495',
-              'tt0372784',
-              'tt0361748',
-              'tt0102926',
-              'tt0993846',
-              'tt0848228',
-              'tt1446714',
-              'tt0144084',
-              'tt0796366',
-              'tt0073195',
-              'tt0936501',
-              'tt5052448',
-              'tt3460252',
-              'tt0234215',
-              'tt0162222',
-              'tt0413300',
-              'tt0469494',
-              'tt3783958',
-              'tt0119488',
-              'tt0120735',
-              'tt8579674',
-              'tt0120363',
-              ]        
+    neighbors = modelKNN.kneighbors(df.loc[df.tconst == tconst].drop(columns=dropables))
 
-def tester(algorithms, liste_test):
-    for algorithm in algorithms:
-        print(f"{algorithm=}")
-        for film in liste_test:
-            print(plus_proches_films(film, 4, X, algorithm)["show_title"])
+    titles = df_base_show[['show_title',
+                           'directors',
+                           'firstActor',
+                           'genres',
+                           'averageRating',
+                           'numVotes',
+                           'tconst']].loc[neighbors[1][0]]
+    return titles
 
-#tester(algorithms, liste_test)
+
+def image_film_choice(tconst):
+    url = 'https://www.imdb.com/title/'+tconst
+    html = requests.get(url)
+    navigator = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1)'
+    html = requests.get(url, headers={'User-Agent': navigator})
+    soup = BeautifulSoup(html.text, 'html.parser')
+    images = soup.find_all('img', {'src':re.compile('.jpg')})
+    for image in images:
+        affiche=[]
+        affiche.append(image['src'])
+        break
+    return affiche
+
+def title_to_tconst(full_title):
+    row = df_base_show[df_base_show["show_title"] == full_title]
+    tconst = row["tconst"].iloc[0]
+    return tconst
+
