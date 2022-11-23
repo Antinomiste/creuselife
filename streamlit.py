@@ -79,7 +79,7 @@ if option:
         category_value = st.slider("Quel poids pour la presence d'une actrice principale ?",
                                    min_value=0,
                                    max_value=500,
-                                   value=0,
+                                   value=250,
                                    step=25,
                                    )
 
